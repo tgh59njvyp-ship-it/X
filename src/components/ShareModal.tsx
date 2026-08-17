@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Copy, Check, Code2, Link, FileText, QrCode } from 'lucide-react';
+import { X, Copy, Check, Code2, Link, FileText, Zap, Loader2 } from 'lucide-react';
 import { CustomButtonConfig } from '../types';
-import { buildShareableButtonUrl } from '../utils/encoder';
+import { buildShareableButtonUrl, getShortenedUrl } from '../utils/encoder';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -11,22 +11,44 @@ interface ShareModalProps {
 }
 
 export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, config }) => {
-  const [copiedType, setCopiedType] = useState<'url' | 'iframe' | 'markdown' | null>(null);
+  const [copiedType, setCopiedType] = useState<'url' | 'short' | 'iframe' | 'markdown' | null>(null);
   const [activeTab, setActiveTab] = useState<'link' | 'embed' | 'markdown'>('link');
+  const [shortUrl, setShortUrl] = useState<string>('');
+  const [isShortening, setIsShortening] = useState(false);
 
   if (!isOpen) return null;
 
   const shareUrl = buildShareableButtonUrl(config);
-  const iframeCode = `<iframe src="${shareUrl}" width="100%" height="320" style="border:none; border-radius:16px; overflow:hidden;" title="${config.title}"></iframe>`;
-  const markdownCode = `[𝕏 ${config.buttonText}](${shareUrl})`;
+  const activeUrl = shortUrl || shareUrl;
+  const iframeCode = `<iframe src="${activeUrl}" width="100%" height="320" style="border:none; border-radius:16px; overflow:hidden;" title="${config.title}"></iframe>`;
+  const markdownCode = `[𝕏 ${config.buttonText}](${activeUrl})`;
 
-  const handleCopy = async (text: string, type: 'url' | 'iframe' | 'markdown') => {
+  const handleCopy = async (text: string, type: 'url' | 'short' | 'iframe' | 'markdown') => {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedType(type);
       setTimeout(() => setCopiedType(null), 2000);
     } catch (err) {
       console.error('Copy failed:', err);
+    }
+  };
+
+  const handleGenerateShortUrl = async () => {
+    if (shortUrl) {
+      handleCopy(shortUrl, 'short');
+      return;
+    }
+    setIsShortening(true);
+    try {
+      const result = await getShortenedUrl(config);
+      setShortUrl(result);
+      await navigator.clipboard.writeText(result);
+      setCopiedType('short');
+      setTimeout(() => setCopiedType(null), 2500);
+    } catch (e) {
+      console.error('Failed to shorten URL:', e);
+    } finally {
+      setIsShortening(false);
     }
   };
 
@@ -98,32 +120,81 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, config 
           {/* Tab Content */}
           <div className="mb-6">
             {activeTab === 'link' && (
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">
-                  共有用URL (誰でもこのボタンを遊べます)
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={shareUrl}
-                    className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200 select-all focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(shareUrl, 'url')}
-                    className="px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold text-xs transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
-                  >
-                    {copiedType === 'url' ? (
-                      <>
-                        <Check className="w-4 h-4" /> コピー済
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4" /> コピー
-                      </>
-                    )}
-                  </button>
+              <div className="space-y-4">
+                {/* Short URL Box (Featured for X) */}
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-sky-500/10 via-purple-500/10 to-pink-500/10 border border-sky-200 dark:border-sky-800/60">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-sky-700 dark:text-sky-300 flex items-center gap-1.5">
+                      <Zap className="w-4 h-4 fill-sky-500 text-sky-500" />
+                      ⚡ 𝕏投稿用 短縮URL (超ショート)
+                    </span>
+                    <span className="text-[10px] bg-sky-200 dark:bg-sky-900/80 text-sky-800 dark:text-sky-200 px-2 py-0.5 rounded-full font-medium">
+                      𝕏文字数制限対策
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      placeholder="短縮ボタンを押すと生成されます"
+                      value={shortUrl}
+                      className="flex-1 px-3.5 py-2.5 rounded-xl border border-sky-300 dark:border-sky-700 bg-white dark:bg-slate-900 text-xs font-mono text-slate-800 dark:text-slate-200 select-all focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleGenerateShortUrl}
+                      disabled={isShortening}
+                      className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 shrink-0 shadow-md shadow-sky-500/20 disabled:opacity-50"
+                    >
+                      {isShortening ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" /> 生成中...
+                        </>
+                      ) : copiedType === 'short' ? (
+                        <>
+                          <Check className="w-4 h-4" /> コピー完了！
+                        </>
+                      ) : shortUrl ? (
+                        <>
+                          <Copy className="w-4 h-4" /> 短縮コピー
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-4 h-4" /> 短縮URLを発行
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Regular URL */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
+                    フルサイズURL (データ直接埋め込み)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={shareUrl}
+                      className="flex-1 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-[11px] font-mono text-slate-600 dark:text-slate-300 select-all focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(shareUrl, 'url')}
+                      className="px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium text-xs transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
+                    >
+                      {copiedType === 'url' ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-500" /> コピー済
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" /> コピー
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

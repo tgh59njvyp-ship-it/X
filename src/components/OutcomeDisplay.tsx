@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { ExternalLink, Copy, Check, RefreshCw, Share2, Sparkles, Globe } from 'lucide-react';
 import { CustomButtonConfig } from '../types';
-import { buildShareableButtonUrl, buildXIntentUrl, formatPostText, normalizeHashtags } from '../utils/encoder';
+import {
+  buildShareableButtonUrl,
+  buildXIntentUrl,
+  formatPostText,
+  getShortenedUrl,
+  normalizeHashtags,
+} from '../utils/encoder';
 
 interface OutcomeDisplayProps {
   config: CustomButtonConfig;
@@ -20,20 +26,36 @@ export const OutcomeDisplay: React.FC<OutcomeDisplayProps> = ({
   onOpenShare,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [shortUrl, setShortUrl] = useState<string>('');
+
+  const fullShareableUrl = buildShareableButtonUrl(config);
+
+  // Auto-generate short URL when result is displayed
+  useEffect(() => {
+    let active = true;
+    getShortenedUrl(config).then((res) => {
+      if (active && res) {
+        setShortUrl(res);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [config]);
 
   // Format full post content using standard formatPostText
   const postBody = formatPostText(config, outcomeText, userInput);
 
-  const shareableUrl = buildShareableButtonUrl(config);
   const hashtags = normalizeHashtags(config.hashtags);
-  const targetUrl = config.targetUrl || shareableUrl;
+  const effectiveShareUrl = shortUrl || fullShareableUrl;
+  const targetUrl = config.targetUrl || effectiveShareUrl;
 
-  // Generate official X Intent URL with attached web link
+  // Generate official X Intent URL with attached short web link
   const xIntentUrl = buildXIntentUrl({
     text: postBody,
     hashtags,
     targetUrl: config.targetUrl,
-    shareableUrl,
+    shareableUrl: effectiveShareUrl,
   });
 
   const handleCopy = async () => {
@@ -125,7 +147,7 @@ export const OutcomeDisplay: React.FC<OutcomeDisplayProps> = ({
 
           {/* Big Screen Web Browser Button */}
           <a
-            href={shareableUrl}
+            href={effectiveShareUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900/80 text-sky-700 dark:text-sky-300 font-bold text-sm transition-all cursor-pointer shrink-0 shadow-xs"

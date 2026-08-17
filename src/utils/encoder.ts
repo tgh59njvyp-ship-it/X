@@ -176,10 +176,49 @@ export function buildShareableButtonUrl(config: CustomButtonConfig): string {
 }
 
 /**
- * Parses current window URL query param or hash to see if a button config exists
+ * Requests a short URL for a button configuration from the server (e.g. /b/a8x9q2)
+ */
+export async function getShortenedUrl(config: CustomButtonConfig): Promise<string> {
+  const longUrl = buildShareableButtonUrl(config);
+  try {
+    const res = await fetch('/api/shorten', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.shortUrl) return data.shortUrl;
+    }
+  } catch (e) {
+    console.warn('Shortener API failed, trying fallback...', e);
+  }
+
+  // TinyURL fallback if API is unreachable
+  try {
+    const tinyRes = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+    if (tinyRes.ok) {
+      const short = await tinyRes.text();
+      if (short && short.startsWith('http')) return short;
+    }
+  } catch (e) {
+    console.warn('TinyURL fallback failed:', e);
+  }
+
+  return longUrl;
+}
+
+/**
+ * Parses current window URL query param, server preloaded data, or hash to see if a button config exists
  */
 export function getButtonFromUrlHash(): CustomButtonConfig | null {
   if (typeof window === 'undefined') return null;
+
+  // Check server preloaded button data for short URLs (/b/:id)
+  if ((window as any).__PRELOADED_BTN_DATA__) {
+    const config = decodeButtonConfig((window as any).__PRELOADED_BTN_DATA__);
+    if (config) return config;
+  }
 
   // Try query parameter first (used by X crawler and direct link sharing)
   try {

@@ -38,6 +38,46 @@ function escapeHtml(unsafe: string) {
     .replace(/'/g, '&#039;');
 }
 
+// Short URL Persistence Store
+const SHORT_URLS_FILE = path.join(process.cwd(), 'short_urls.json');
+let shortUrlsMap = new Map<string, any>();
+
+function loadShortUrls() {
+  try {
+    if (fs.existsSync(SHORT_URLS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(SHORT_URLS_FILE, 'utf-8'));
+      Object.entries(data).forEach(([key, val]) => {
+        shortUrlsMap.set(key, val);
+      });
+    }
+  } catch (e) {
+    console.error('Failed to load short URLs file:', e);
+  }
+}
+
+function saveShortUrls() {
+  try {
+    const obj: Record<string, any> = {};
+    shortUrlsMap.forEach((val, key) => {
+      obj[key] = val;
+    });
+    fs.writeFileSync(SHORT_URLS_FILE, JSON.stringify(obj, null, 2), 'utf-8');
+  } catch (e) {
+    console.error('Failed to save short URLs file:', e);
+  }
+}
+
+function generateShortKey(length = 6): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+loadShortUrls();
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -140,6 +180,74 @@ async function startServer() {
     }
   });
 
+  // Short URL Creator API
+  app.post('/api/shorten', (req, res) => {
+    try {
+      const { config, btnData, longUrl } = req.body;
+      let finalBtnData = btnData;
+
+      if (!finalBtnData && config) {
+        // Encode config if passed
+        const jsonStr = JSON.stringify(config);
+        const encodedBytes = encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (_, p1) =>
+          String.fromCharCode(parseInt(p1, 16))
+        );
+        finalBtnData = Buffer.from(encodedBytes).toString('base64');
+      }
+
+      if (!finalBtnData && longUrl) {
+        const match = longUrl.match(/btn=([^&#]+)/);
+        if (match) {
+          finalBtnData = match[1];
+        } else {
+          finalBtnData = longUrl;
+        }
+      }
+
+      if (!finalBtnData) {
+        return res.status(400).json({ success: false, error: 'Data is required' });
+      }
+
+      // Check if short key already exists
+      for (const [key, val] of shortUrlsMap.entries()) {
+        if (val.btnData === finalBtnData) {
+          const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000';
+          const protocol = req.headers['x-forwarded-proto'] || 'https';
+          return res.json({
+            success: true,
+            shortKey: key,
+            shortUrl: `${protocol}://${host}/b/${key}`,
+          });
+        }
+      }
+
+      let shortKey = generateShortKey();
+      while (shortUrlsMap.has(shortKey)) {
+        shortKey = generateShortKey();
+      }
+
+      shortUrlsMap.set(shortKey, {
+        btnData: finalBtnData,
+        config: config || null,
+        createdAt: new Date().toISOString(),
+      });
+      saveShortUrls();
+
+      const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost:3000';
+      const protocol = req.headers['x-forwarded-proto'] || 'https';
+      const shortUrl = `${protocol}://${host}/b/${shortKey}`;
+
+      return res.json({
+        success: true,
+        shortKey,
+        shortUrl,
+      });
+    } catch (err: any) {
+      console.error('Error in /api/shorten:', err);
+      return res.status(500).json({ success: false, error: 'Shortening failed' });
+    }
+  });
+
   let vite: any = null;
   if (process.env.NODE_ENV !== 'production') {
     vite = await createViteServer({
@@ -164,8 +272,27 @@ async function startServer() {
       let pageTitle = 'X Post Button Maker – カスタム𝕏投稿ボタン＆ガチャ作成ツール';
       let pageDesc =
         '誰でも簡単に𝕏(Twitter)で遊べるオリジナルボタンやガチャ、診断クイズを作成・共有できる無料ツール！ワンタップで𝕏に投稿できます。';
+      let preloadedBtnData = '';
 
-      if (req.query.btn && typeof req.query.btn === 'string') {
+      // Check if URL matches short route /b/:id
+      const shortMatch = req.path.match(/^\/b\/([a-zA-Z0-9]+)$/);
+      if (shortMatch) {
+        const shortKey = shortMatch[1];
+        const entry = shortUrlsMap.get(shortKey);
+        if (entry) {
+          preloadedBtnData = entry.btnData;
+          const config = entry.config || decodeBtnParam(entry.btnData);
+          if (config && config.title) {
+            pageTitle = `${config.title} | X Post Button Maker`;
+            if (config.description) {
+              pageDesc = config.description;
+            } else if (config.outcomes && config.outcomes.length > 0) {
+              pageDesc = `「${config.title}」を押して結果を𝕏にポストしよう！`;
+            }
+          }
+        }
+      } else if (req.query.btn && typeof req.query.btn === 'string') {
+        preloadedBtnData = req.query.btn;
         const config = decodeBtnParam(req.query.btn);
         if (config && config.title) {
           pageTitle = `${config.title} | X Post Button Maker`;
@@ -190,6 +317,11 @@ async function startServer() {
           const indexHtmlPath = path.join(process.cwd(), 'index.html');
           html = fs.readFileSync(indexHtmlPath, 'utf-8');
         }
+      }
+
+      if (preloadedBtnData) {
+        const injectedScript = `<script>window.__PRELOADED_BTN_DATA__="${preloadedBtnData}";</script>`;
+        html = html.replace('</head>', `${injectedScript}</head>`);
       }
 
       // Replace meta tags with dynamic title, description, and full image URL
