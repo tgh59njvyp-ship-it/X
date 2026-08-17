@@ -80,6 +80,16 @@ export default function App() {
     return () => window.removeEventListener('hashchange', checkHash);
   }, []);
 
+  // Update document title dynamically
+  useEffect(() => {
+    const activeBtn = sharedButton || currentConfig;
+    if (activeBtn && activeBtn.title) {
+      document.title = `${activeBtn.title} | X Post Button Maker`;
+    } else {
+      document.title = 'X Post Button Maker – カスタム𝕏投稿ボタン＆ガチャ作成ツール';
+    }
+  }, [sharedButton, currentConfig]);
+
   // Save to LocalStorage helper
   const saveButtonsToStorage = (buttons: CustomButtonConfig[]) => {
     setSavedButtons(buttons);
@@ -91,23 +101,29 @@ export default function App() {
   };
 
   // Handle Button Press (Draw outcome)
-  const handlePressButton = (cfg: CustomButtonConfig, userInput?: string) => {
+  const handlePressButton = (
+    cfg: CustomButtonConfig,
+    userInput?: string,
+    outcomeObj?: { text: string; rarity?: string }
+  ) => {
     setLastUserInput(userInput);
     const outcomes = cfg.outcomes && cfg.outcomes.length > 0 ? cfg.outcomes : ['ポストする内容'];
 
-    let chosenText = outcomes[0];
-    if (cfg.mode === 'random') {
-      const randIdx = Math.floor(Math.random() * outcomes.length);
-      chosenText = outcomes[randIdx];
-    } else {
-      chosenText = outcomes[0];
+    let chosenText = outcomeObj?.text || outcomes[0];
+    if (!outcomeObj) {
+      if (cfg.mode === 'random') {
+        const randIdx = Math.floor(Math.random() * outcomes.length);
+        chosenText = outcomes[randIdx];
+      } else {
+        chosenText = outcomes[0];
+      }
     }
 
     setOutcomeText(chosenText);
 
     // If autoOpenX is enabled (default true), immediately launch X post window
     if (cfg.autoOpenX !== false) {
-      const postBody = formatPostText(cfg, chosenText, userInput);
+      const postBody = formatPostText(cfg, chosenText, userInput, 1, outcomeObj?.rarity);
 
       const intentUrl = buildXIntentUrl({
         text: postBody,

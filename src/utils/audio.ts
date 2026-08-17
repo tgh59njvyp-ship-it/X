@@ -116,6 +116,71 @@ export function playSound(effect: SoundEffect): void {
         });
         break;
       }
+
+      case 'drumroll': {
+        const rollCount = 12;
+        for (let i = 0; i < rollCount; i++) {
+          const hitTime = now + i * 0.04;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(120 + Math.random() * 30, hitTime);
+          gain.gain.setValueAtTime(0.15 + (i / rollCount) * 0.2, hitTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, hitTime + 0.03);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(hitTime);
+          osc.stop(hitTime + 0.03);
+        }
+        const crashTime = now + rollCount * 0.04;
+        const crashOsc = ctx.createOscillator();
+        const crashGain = ctx.createGain();
+        crashOsc.type = 'square';
+        crashOsc.frequency.setValueAtTime(800, crashTime);
+        crashOsc.frequency.exponentialRampToValueAtTime(100, crashTime + 0.3);
+        crashGain.gain.setValueAtTime(0.3, crashTime);
+        crashGain.gain.exponentialRampToValueAtTime(0.01, crashTime + 0.3);
+        crashOsc.connect(crashGain);
+        crashGain.connect(ctx.destination);
+        crashOsc.start(crashTime);
+        crashOsc.stop(crashTime + 0.3);
+        break;
+      }
+
+      case 'magic': {
+        const frequencies = [523.25, 659.25, 783.99, 1046.5, 1318.51, 1567.98, 2093.0];
+        frequencies.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const t = now + idx * 0.04;
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, t);
+          gain.gain.setValueAtTime(0.2, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.25);
+        });
+        break;
+      }
+
+      case 'applause': {
+        const cheerNotes = [392.0, 493.88, 587.33, 783.99];
+        cheerNotes.forEach((freq) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.5);
+        });
+        break;
+      }
     }
   } catch (e) {
     console.warn('Audio playback error:', e);
