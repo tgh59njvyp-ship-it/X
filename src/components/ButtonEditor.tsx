@@ -1,0 +1,421 @@
+import React, { useState } from 'react';
+import { Plus, Trash2, Wand2, HelpCircle, Hash, Link as LinkIcon, Palette, Volume2, Sparkles } from 'lucide-react';
+import { CustomButtonConfig, ColorScheme, ButtonShape, ClickAnimation, SoundEffect, PostMode } from '../types';
+import { AVAILABLE_ICONS } from './IconResolver';
+import { normalizeHashtags } from '../utils/encoder';
+
+interface ButtonEditorProps {
+  config: CustomButtonConfig;
+  onChange: (updated: CustomButtonConfig) => void;
+  onOpenAiAssistant: () => void;
+}
+
+export const ButtonEditor: React.FC<ButtonEditorProps> = ({
+  config,
+  onChange,
+  onOpenAiAssistant,
+}) => {
+  const [hashtagInput, setHashtagInput] = useState(config.hashtags.join(', '));
+
+  const updateField = <K extends keyof CustomButtonConfig>(
+    field: K,
+    value: CustomButtonConfig[K]
+  ) => {
+    onChange({ ...config, [field]: value });
+  };
+
+  const handleHashtagBlur = () => {
+    const cleaned = normalizeHashtags(hashtagInput);
+    updateField('hashtags', cleaned);
+  };
+
+  const handleOutcomeChange = (index: number, text: string) => {
+    const newOutcomes = [...config.outcomes];
+    newOutcomes[index] = text;
+    updateField('outcomes', newOutcomes);
+  };
+
+  const addOutcome = () => {
+    updateField('outcomes', [...config.outcomes, '新しいバリエーションのテキスト']);
+  };
+
+  const removeOutcome = (index: number) => {
+    if (config.outcomes.length <= 1) return;
+    const newOutcomes = config.outcomes.filter((_, i) => i !== index);
+    updateField('outcomes', newOutcomes);
+  };
+
+  const colorSchemes: { id: ColorScheme; label: string; color: string }[] = [
+    { id: 'blue', label: 'スカイ', color: 'bg-sky-500' },
+    { id: 'sunset', label: 'サンセット', color: 'bg-gradient-to-r from-orange-500 to-amber-500' },
+    { id: 'neon', label: 'ネオン', color: 'bg-gradient-to-r from-cyan-400 to-emerald-400' },
+    { id: 'sakura', label: 'サクラ', color: 'bg-gradient-to-r from-pink-500 to-rose-400' },
+    { id: 'emerald', label: 'エメラルド', color: 'bg-emerald-500' },
+    { id: 'dark', label: 'ダークナイト', color: 'bg-slate-900 border border-slate-700' },
+    { id: 'gold', label: 'ゴールド', color: 'bg-gradient-to-r from-amber-300 to-yellow-500' },
+    { id: 'purple', label: 'パープル', color: 'bg-gradient-to-r from-purple-600 to-indigo-600' },
+  ];
+
+  const shapes: { id: ButtonShape; label: string }[] = [
+    { id: 'pill', label: '丸型 (Pill)' },
+    { id: 'rounded', label: '角丸 (Rounded)' },
+    { id: 'square', label: '四角 (Square)' },
+    { id: 'retro3d', label: '3Dボタン (Retro)' },
+  ];
+
+  const animations: { id: ClickAnimation; label: string }[] = [
+    { id: 'confetti', label: '🎉 紙吹雪 (Confetti)' },
+    { id: 'hearts', label: '💖 ハート爆発' },
+    { id: 'sparkles', label: '✨ キラキラ' },
+    { id: 'bounce', label: '弾む (Bounce)' },
+  ];
+
+  const sounds: { id: SoundEffect; label: string }[] = [
+    { id: 'fanfare', label: '🎺 ファンファーレ' },
+    { id: 'pop', label: '🎈 ポップ音' },
+    { id: 'coin', label: '🪙 コイン音' },
+    { id: 'click', label: '🖱️ クリック音' },
+    { id: 'none', label: 'ミュート (無音)' },
+  ];
+
+  return (
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-lg p-6 md:p-8 space-y-8 text-slate-900 dark:text-slate-100">
+      {/* Header & AI Quick Generator */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
+        <div>
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            ⚙️ ボタンの設定・カスタマイズ
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            タイトル・テキスト・ハッシュタグ・デザインを自由に調整できます。
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onOpenAiAssistant}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs shadow-md transition-colors cursor-pointer shrink-0"
+        >
+          <Wand2 className="w-4 h-4" />
+          AIでボタン案を自動作成
+        </button>
+      </div>
+
+      {/* 1. Basic Info Section */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+          1. 基本情報
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              タイトル (サイト・ページ用)
+            </label>
+            <input
+              type="text"
+              value={config.title}
+              onChange={(e) => updateField('title', e.target.value)}
+              placeholder="例: 今日の運勢ガチャ"
+              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              ボタンの表示テキスト
+            </label>
+            <input
+              type="text"
+              value={config.buttonText}
+              onChange={(e) => updateField('buttonText', e.target.value)}
+              placeholder="例: 𝕏 今日の運勢を占う"
+              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 font-bold"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            説明文 (任意)
+          </label>
+          <input
+            type="text"
+            value={config.description || ''}
+            onChange={(e) => updateField('description', e.target.value)}
+            placeholder="例: ボタンを押して今日のラッキー運勢を占おう！結果をそのままXでシェア！"
+            className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+          />
+        </div>
+      </div>
+
+      {/* 2. Output Mode & Content Section */}
+      <div className="space-y-4 pt-6 border-t border-slate-200 dark:border-slate-800">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+            2. 出力する内容 (出てきた内容)
+          </h3>
+
+          <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => updateField('mode', 'random')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                config.mode === 'random'
+                  ? 'bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400'
+              }`}
+            >
+              🎲 ランダム(ガチャ)
+            </button>
+            <button
+              type="button"
+              onClick={() => updateField('mode', 'single')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                config.mode === 'single'
+                  ? 'bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400'
+              }`}
+            >
+              📌 固定テキスト
+            </button>
+            <button
+              type="button"
+              onClick={() => updateField('mode', 'input')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                config.mode === 'input'
+                  ? 'bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400'
+              }`}
+            >
+              ✍️ ユーザー入力対応
+            </button>
+          </div>
+        </div>
+
+        {/* Input Mode Config */}
+        {config.mode === 'input' && (
+          <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 space-y-3">
+            <p className="text-xs text-amber-800 dark:text-amber-300">
+              💡 ボタンを押す前に、ユーザーに名前や言葉を入力してもらえます。テキスト内の <code className="font-mono bg-amber-100 dark:bg-amber-900 px-1 rounded">{'{name}'}</code> が自動置換されます。
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  入力ラベル
+                </label>
+                <input
+                  type="text"
+                  value={config.inputLabel || ''}
+                  onChange={(e) => updateField('inputLabel', e.target.value)}
+                  placeholder="例: あなたの名前"
+                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  プレースホルダー
+                </label>
+                <input
+                  type="text"
+                  value={config.inputPlaceholder || ''}
+                  onChange={(e) => updateField('inputPlaceholder', e.target.value)}
+                  placeholder="例: 山田太郎"
+                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Outcomes List */}
+        <div className="space-y-3">
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+            {config.mode === 'random' ? '出分けのテキストバリエーション (ランダム選択されます):' : 'ポストされるテキスト:'}
+          </label>
+
+          {config.outcomes.map((text, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-bold flex items-center justify-center shrink-0">
+                {idx + 1}
+              </span>
+              <input
+                type="text"
+                value={text}
+                onChange={(e) => handleOutcomeChange(idx, e.target.value)}
+                placeholder={`テキスト項目 ${idx + 1}`}
+                className="flex-1 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+              />
+              {config.mode === 'random' && config.outcomes.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeOutcome(idx)}
+                  className="p-2 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
+                  title="削除"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          ))}
+
+          {config.mode === 'random' && (
+            <button
+              type="button"
+              onClick={addOutcome}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-dashed border-sky-400 text-sky-600 hover:bg-sky-50 dark:border-sky-700 dark:text-sky-400 dark:hover:bg-sky-950/40 text-xs font-semibold transition-colors cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              バリエーションを追加
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 3. Hashtags & Target URL Section */}
+      <div className="space-y-4 pt-6 border-t border-slate-200 dark:border-slate-800">
+        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+          3. ハッシュタグ＆添付URL設定
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+              <Hash className="w-3.5 h-3.5 text-sky-500" />
+              ハッシュタグ (カンマまたはスペース区切り)
+            </label>
+            <input
+              type="text"
+              value={hashtagInput}
+              onChange={(e) => setHashtagInput(e.target.value)}
+              onBlur={handleHashtagBlur}
+              placeholder="例: 今日の運勢, ガチャ, Xボタン"
+              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+              <LinkIcon className="w-3.5 h-3.5 text-sky-500" />
+              投稿に付属させるURL (任意)
+            </label>
+            <input
+              type="url"
+              value={config.targetUrl || ''}
+              onChange={(e) => updateField('targetUrl', e.target.value)}
+              placeholder="https://example.com"
+              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Button Design & Effects */}
+      <div className="space-y-4 pt-6 border-t border-slate-200 dark:border-slate-800">
+        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+          <Palette className="w-4 h-4 text-purple-500" />
+          4. デザイン＆エフェクト
+        </h3>
+
+        {/* Color Theme Selector */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
+            カラーテーマ
+          </label>
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+            {colorSchemes.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => updateField('colorScheme', c.id)}
+                className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-all cursor-pointer ${
+                  config.colorScheme === c.id
+                    ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/40 ring-2 ring-sky-500'
+                    : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
+                }`}
+              >
+                <span className={`w-8 h-8 rounded-full shadow-sm ${c.color}`} />
+                <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 truncate w-full text-center">
+                  {c.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Shape */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              ボタンの形状
+            </label>
+            <select
+              value={config.shape}
+              onChange={(e) => updateField('shape', e.target.value as ButtonShape)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none"
+            >
+              {shapes.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Icon */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              アイコン
+            </label>
+            <select
+              value={config.icon}
+              onChange={(e) => updateField('icon', e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none"
+            >
+              {AVAILABLE_ICONS.map((i) => (
+                <option key={i.name} value={i.name}>
+                  {i.label} ({i.name})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Click Animation */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              押し時の演出
+            </label>
+            <select
+              value={config.animation}
+              onChange={(e) => updateField('animation', e.target.value as ClickAnimation)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none"
+            >
+              {animations.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sound Effect */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              効果音
+            </label>
+            <select
+              value={config.sound}
+              onChange={(e) => updateField('sound', e.target.value as SoundEffect)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs focus:outline-none"
+            >
+              {sounds.map((snd) => (
+                <option key={snd.id} value={snd.id}>
+                  {snd.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

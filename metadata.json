@@ -1,0 +1,6 @@
+{
+  "name": "X Post Button Maker",
+  "description": "誰でも簡単にカスタムX(Twitter)ポストボタンを作成・共有できるWEBツール。ランダム出力、ハッシュタグ設定、リンク設定に対応。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
