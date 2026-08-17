@@ -96,6 +96,26 @@ export function playSound(effect: SoundEffect): void {
         });
         break;
       }
+
+      case 'trumpet': {
+        const notes = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const noteTime = now + idx * 0.06;
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, noteTime);
+
+          gain.gain.setValueAtTime(0.15, noteTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, noteTime + 0.25);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(noteTime);
+          osc.stop(noteTime + 0.25);
+        });
+        break;
+      }
     }
   } catch (e) {
     console.warn('Audio playback error:', e);

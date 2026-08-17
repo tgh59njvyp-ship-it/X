@@ -21,6 +21,7 @@ import { GalleryView } from './components/GalleryView';
 import { SavedButtonsView } from './components/SavedButtonsView';
 import { ShareModal } from './components/ShareModal';
 import { AiAssistantModal } from './components/AiAssistantModal';
+import { getCardBgStyleObj } from './utils/theme';
 import { Bookmark, Share2, Sparkles, Plus, Check, Play, Edit3, ArrowLeft } from 'lucide-react';
 
 const LOCAL_STORAGE_KEY = 'x_post_buttons_v1';
@@ -229,19 +230,27 @@ export default function App() {
 
         <main className="max-w-2xl mx-auto px-4 py-8 w-full flex-1 flex flex-col items-center justify-center">
           {/* Button Play Card */}
-          <div className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl text-center mb-6">
-            <ButtonCard
-              config={sharedButton}
-              onPress={(input) => handlePressButton(sharedButton, input)}
-            />
+          {(() => {
+            const sharedStyle = getCardBgStyleObj(sharedButton.cardBgStyle, sharedButton.customCardBgColor);
+            return (
+              <div
+                className={`w-full rounded-3xl p-6 md:p-8 text-center mb-6 transition-all duration-300 ${sharedStyle.className}`}
+                style={sharedStyle.style}
+              >
+                <ButtonCard
+                  config={sharedButton}
+                  onPress={(input) => handlePressButton(sharedButton, input)}
+                />
 
-            {!outcomeText && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 flex items-center justify-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-sky-500" />
-                ボタンを押すと、結果文面がセットされた𝕏投稿画面が開きます
-              </p>
-            )}
-          </div>
+                {!outcomeText && (
+                  <p className={`text-xs mt-2 flex items-center justify-center gap-1 ${sharedStyle.isDark ? 'text-sky-300' : 'text-slate-600'}`}>
+                    <Sparkles className="w-3.5 h-3.5 text-sky-500" />
+                    ボタンを押すと、結果文面がセットされた𝕏投稿画面が開きます
+                  </p>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Outcome Card */}
           {outcomeText && (
@@ -327,85 +336,109 @@ export default function App() {
         {activeTab === 'editor' && (
           <div className="space-y-8">
             {/* Live Interactive Preview Stage */}
-            <div className="bg-gradient-to-br from-slate-900 via-slate-950 to-indigo-950 text-white rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-hidden border border-slate-800">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+            {(() => {
+              const liveStyle = getCardBgStyleObj(currentConfig.cardBgStyle, currentConfig.customCardBgColor);
+              return (
+                <div
+                  className={`rounded-3xl p-6 md:p-10 relative overflow-hidden transition-all duration-300 ${liveStyle.className}`}
+                  style={liveStyle.style}
+                >
+                  <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
 
-              <div className="flex items-center justify-between gap-2 mb-6">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  リアルタイムプレビュー (動作確認)
-                </span>
+                  <div className="flex items-center justify-between gap-2 mb-6">
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+                      liveStyle.isDark
+                        ? 'bg-sky-500/20 text-sky-300 border-sky-500/30'
+                        : 'bg-sky-100 text-sky-800 border-sky-300'
+                    }`}>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      リアルタイムプレビュー (動作確認)
+                    </span>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleSaveCurrentButton}
-                    className="px-3.5 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold text-xs transition-colors cursor-pointer flex items-center gap-1.5 shadow-md"
-                  >
-                    {savedToast ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-300" />
-                        保存しました！
-                      </>
-                    ) : (
-                      <>
-                        <Bookmark className="w-3.5 h-3.5" />
-                        マイボタンに保存
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsShareModalOpen(true)}
-                    className="px-3.5 py-1.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-slate-200 font-semibold text-xs transition-colors cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Share2 className="w-3.5 h-3.5" />
-                    共有/埋め込み
-                  </button>
-                </div>
-              </div>
-
-              {/* The Live Button Card */}
-              <div className="py-4">
-                <ButtonCard
-                  config={currentConfig}
-                  onPress={(input) => handlePressButton(currentConfig, input)}
-                />
-
-                {!outcomeText && (
-                  <div className="mt-4 pt-4 border-t border-slate-800/80 text-center space-y-2">
-                    <p className="text-xs text-sky-300 font-medium flex items-center justify-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-                      ボタンを押すと、結果テキストがセットされた𝕏(Twitter)の投稿画面が即座に開きます！
-                    </p>
-                    <div className="flex items-center justify-center gap-3 pt-1">
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={handleCreateNew}
-                        className="text-xs font-bold px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all cursor-pointer flex items-center gap-1.5"
+                        onClick={handleSaveCurrentButton}
+                        className="px-3.5 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-semibold text-xs transition-colors cursor-pointer flex items-center gap-1.5 shadow-md"
                       >
-                        <Plus className="w-3.5 h-3.5" />
-                        新しく別のボタンを作る
+                        {savedToast ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-300" />
+                            保存しました！
+                          </>
+                        ) : (
+                          <>
+                            <Bookmark className="w-3.5 h-3.5" />
+                            マイボタンに保存
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsShareModalOpen(true)}
+                        className={`px-3.5 py-1.5 rounded-xl border font-semibold text-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
+                          liveStyle.isDark
+                            ? 'border-slate-700 hover:bg-slate-800 text-slate-200'
+                            : 'border-slate-300 hover:bg-slate-100 text-slate-800 bg-white/80'
+                        }`}
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                        共有/埋め込み
                       </button>
                     </div>
                   </div>
-                )}
-              </div>
 
-              {/* Revealed Outcome Display in Editor */}
-              <AnimatePresence>
-                {outcomeText && (
-                  <OutcomeDisplay
-                    config={currentConfig}
-                    outcomeText={outcomeText}
-                    userInput={lastUserInput}
-                    onReroll={() => handlePressButton(currentConfig, lastUserInput)}
-                    onOpenShare={() => setIsShareModalOpen(true)}
-                  />
-                )}
-              </AnimatePresence>
-            </div>
+                  {/* The Live Button Card */}
+                  <div className="py-4">
+                    <ButtonCard
+                      config={currentConfig}
+                      onPress={(input) => handlePressButton(currentConfig, input)}
+                    />
+
+                    {!outcomeText && (
+                      <div className={`mt-4 pt-4 border-t text-center space-y-2 ${
+                        liveStyle.isDark ? 'border-slate-800/80' : 'border-slate-300/80'
+                      }`}>
+                        <p className={`text-xs font-medium flex items-center justify-center gap-1.5 ${
+                          liveStyle.isDark ? 'text-sky-300' : 'text-sky-700'
+                        }`}>
+                          <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+                          ボタンを押すと、結果テキストがセットされた𝕏(Twitter)の投稿画面が即座に開きます！
+                        </p>
+                        <div className="flex items-center justify-center gap-3 pt-1">
+                          <button
+                            type="button"
+                            onClick={handleCreateNew}
+                            className={`text-xs font-bold px-4 py-2 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 ${
+                              liveStyle.isDark
+                                ? 'bg-white/10 hover:bg-white/20 text-white border-white/20'
+                                : 'bg-slate-900/10 hover:bg-slate-900/20 text-slate-900 border-slate-900/20'
+                            }`}
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            新しく別のボタンを作る
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Revealed Outcome Display in Editor */}
+                  <AnimatePresence>
+                    {outcomeText && (
+                      <OutcomeDisplay
+                        config={currentConfig}
+                        outcomeText={outcomeText}
+                        userInput={lastUserInput}
+                        onReroll={() => handlePressButton(currentConfig, lastUserInput)}
+                        onOpenShare={() => setIsShareModalOpen(true)}
+                      />
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })()}
 
             {/* Button Editor Form */}
             <ButtonEditor

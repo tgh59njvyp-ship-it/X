@@ -6,13 +6,45 @@ export type ColorScheme =
   | 'emerald'
   | 'dark'
   | 'gold'
-  | 'purple';
+  | 'purple'
+  | 'mint'
+  | 'rainbow'
+  | 'cyber'
+  | 'custom';
+
+export type TextColor =
+  | 'auto'
+  | 'white'
+  | 'black'
+  | 'yellow'
+  | 'cyan'
+  | 'pink'
+  | 'gold'
+  | 'custom';
+
+export type TextSize = 'sm' | 'base' | 'lg' | 'xl';
+
+export type FontFamily = 'sans' | 'rounded' | 'serif' | 'mono' | 'black';
 
 export type ButtonShape = 'pill' | 'rounded' | 'square' | 'retro3d';
 
-export type ClickAnimation = 'confetti' | 'hearts' | 'sparkles' | 'bounce';
+export type BorderStyle = 'none' | 'thin' | 'thick' | 'dashed' | 'neon';
 
-export type SoundEffect = 'none' | 'click' | 'pop' | 'fanfare' | 'coin';
+export type ShadowStyle = 'none' | 'soft' | 'strong' | 'glow';
+
+export type CardBgStyle =
+  | 'dark'
+  | 'white'
+  | 'slate'
+  | 'sunset'
+  | 'sakura'
+  | 'mint'
+  | 'cyber'
+  | 'custom';
+
+export type ClickAnimation = 'confetti' | 'hearts' | 'sparkles' | 'fireworks' | 'snow' | 'bounce';
+
+export type SoundEffect = 'none' | 'click' | 'pop' | 'fanfare' | 'coin' | 'trumpet';
 
 export type PostMode = 'random' | 'single' | 'input';
 
@@ -24,6 +56,15 @@ export interface CustomButtonConfig {
   subText?: string;
   icon: string;
   colorScheme: ColorScheme;
+  customBgColor?: string; // Hex color for custom bg
+  textColor?: TextColor; // Text color option
+  customTextColor?: string; // Custom hex text color
+  textSize?: TextSize; // Text size
+  fontFamily?: FontFamily; // Font style
+  borderStyle?: BorderStyle; // Border style
+  shadowStyle?: ShadowStyle; // Shadow intensity
+  cardBgStyle?: CardBgStyle; // Background style behind the button
+  customCardBgColor?: string; // Custom hex color for stage background behind button
   shape: ButtonShape;
   animation: ClickAnimation;
   sound: SoundEffect;
@@ -36,6 +77,7 @@ export interface CustomButtonConfig {
   prefixText?: string; // Text added before outcome
   suffixText?: string; // Text added after outcome
   autoOpenX?: boolean; // Automatically open X post page when clicked (default true)
+  showCounter?: boolean; // Show click counter badge on button
   createdAt: number;
   authorName?: string;
 }
