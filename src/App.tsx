@@ -11,6 +11,7 @@ import {
   getButtonFromUrlHash,
   buildShareableButtonUrl,
   encodeButtonConfig,
+  buildXIntentUrl,
 } from './utils/encoder';
 import { Header } from './components/Header';
 import { ButtonCard } from './components/ButtonCard';
@@ -92,11 +93,37 @@ export default function App() {
     setLastUserInput(userInput);
     const outcomes = cfg.outcomes && cfg.outcomes.length > 0 ? cfg.outcomes : ['ポストする内容'];
 
+    let chosenText = outcomes[0];
     if (cfg.mode === 'random') {
       const randIdx = Math.floor(Math.random() * outcomes.length);
-      setOutcomeText(outcomes[randIdx]);
+      chosenText = outcomes[randIdx];
     } else {
-      setOutcomeText(outcomes[0]);
+      chosenText = outcomes[0];
+    }
+
+    setOutcomeText(chosenText);
+
+    // If autoOpenX is enabled (default true), immediately launch X post window
+    if (cfg.autoOpenX !== false) {
+      let fullMessage = chosenText;
+      if (cfg.mode === 'input' && userInput) {
+        fullMessage = fullMessage.replace('{input}', userInput).replace('{name}', userInput);
+      }
+      const prefix = cfg.prefixText ? cfg.prefixText.trim() + '\n' : '';
+      const suffix = cfg.suffixText ? '\n' + cfg.suffixText.trim() : '';
+      const postBody = `${prefix}${fullMessage}${suffix}`;
+
+      const intentUrl = buildXIntentUrl({
+        text: postBody,
+        hashtags: cfg.hashtags,
+        targetUrl: cfg.targetUrl,
+      });
+
+      try {
+        window.open(intentUrl, '_blank', 'noopener,noreferrer');
+      } catch (e) {
+        console.error('Failed to open X intent:', e);
+      }
     }
   };
 
@@ -173,8 +200,14 @@ export default function App() {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between selection:bg-sky-500 selection:text-white">
         <header className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between max-w-4xl mx-auto w-full rounded-b-2xl shadow-sm">
-          <div className="flex items-center gap-2">
-            <span className="w-8 h-8 rounded-xl bg-black text-white font-bold flex items-center justify-center text-sm">
+          <div
+            onClick={() => {
+              window.location.hash = '';
+              setSharedButton(null);
+            }}
+            className="flex items-center gap-2 cursor-pointer group"
+          >
+            <span className="w-8 h-8 rounded-xl bg-black text-white font-bold flex items-center justify-center text-sm shadow group-hover:scale-105 transition-transform">
               𝕏
             </span>
             <span className="font-extrabold text-sm sm:text-base">X Post Button Maker</span>
@@ -185,9 +218,11 @@ export default function App() {
             onClick={() => {
               window.location.hash = '';
               setSharedButton(null);
+              handleCreateNew();
             }}
-            className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white transition-colors cursor-pointer flex items-center gap-1"
+            className="text-xs font-bold px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white transition-all shadow-md cursor-pointer flex items-center gap-1.5"
           >
+            <Plus className="w-4 h-4" />
             自分もボタンを作る
           </button>
         </header>
@@ -199,6 +234,13 @@ export default function App() {
               config={sharedButton}
               onPress={(input) => handlePressButton(sharedButton, input)}
             />
+
+            {!outcomeText && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 flex items-center justify-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-sky-500" />
+                ボタンを押すと、結果文面がセットされた𝕏投稿画面が開きます
+              </p>
+            )}
           </div>
 
           {/* Outcome Card */}
@@ -212,21 +254,47 @@ export default function App() {
             />
           )}
 
-          {/* Remix Option */}
-          <div className="mt-8 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                window.location.hash = '';
-                setCurrentConfig({ ...sharedButton, id: 'btn_' + Date.now().toString(36) });
-                setSharedButton(null);
-                setActiveTab('editor');
-              }}
-              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-400 underline transition-colors cursor-pointer"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-              このボタンをカスタマイズして自分のボタンを作る
-            </button>
+          {/* Prominent CTA Box to create a new button */}
+          <div className="w-full mt-6 bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 p-0.5 rounded-3xl shadow-lg">
+            <div className="bg-white dark:bg-slate-900 rounded-[23px] p-6 text-center space-y-3">
+              <div className="inline-flex p-2.5 rounded-2xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <h4 className="font-extrabold text-slate-900 dark:text-white text-base md:text-lg">
+                あなたもオリジナルの𝕏ボタンを作ってみませんか？
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                おみくじ・ガチャ・進捗報告・診断ボタンなど、誰でも簡単に作れてすぐ共有できます！(完全無料・登録不要)
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.hash = '';
+                    setSharedButton(null);
+                    handleCreateNew();
+                  }}
+                  className="w-full sm:w-auto py-3 px-6 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-extrabold text-xs md:text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  新しいボタンを作るサイトへ
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.hash = '';
+                    setCurrentConfig({ ...sharedButton, id: 'btn_' + Date.now().toString(36) });
+                    setSharedButton(null);
+                    setActiveTab('editor');
+                  }}
+                  className="w-full sm:w-auto py-3 px-5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  このボタンをアレンジ作成
+                </button>
+              </div>
+            </div>
           </div>
         </main>
 
@@ -304,6 +372,25 @@ export default function App() {
                   config={currentConfig}
                   onPress={(input) => handlePressButton(currentConfig, input)}
                 />
+
+                {!outcomeText && (
+                  <div className="mt-4 pt-4 border-t border-slate-800/80 text-center space-y-2">
+                    <p className="text-xs text-sky-300 font-medium flex items-center justify-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+                      ボタンを押すと、結果テキストがセットされた𝕏(Twitter)の投稿画面が即座に開きます！
+                    </p>
+                    <div className="flex items-center justify-center gap-3 pt-1">
+                      <button
+                        type="button"
+                        onClick={handleCreateNew}
+                        className="text-xs font-bold px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        新しく別のボタンを作る
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Revealed Outcome Display in Editor */}

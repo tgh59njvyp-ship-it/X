@@ -35,6 +35,7 @@ export interface CustomButtonConfig {
   targetUrl?: string; // Custom link attached to tweet
   prefixText?: string; // Text added before outcome
   suffixText?: string; // Text added after outcome
+  autoOpenX?: boolean; // Automatically open X post page when clicked (default true)
   createdAt: number;
   authorName?: string;
 }

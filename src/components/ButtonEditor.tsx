@@ -269,6 +269,27 @@ export const ButtonEditor: React.FC<ButtonEditorProps> = ({
             </button>
           )}
         </div>
+
+        {/* Auto open X toggle setting */}
+        <div className="pt-2 flex items-center justify-between p-3.5 rounded-2xl bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-900/50">
+          <div>
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+              ⚡ ボタン押下時のダイレクト投稿移動
+            </span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+              ボタンを押すとすぐに結果をセットした𝕏(Twitter)の投稿画面を新しいタブで開きます
+            </span>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={config.autoOpenX !== false}
+              onChange={(e) => updateField('autoOpenX', e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
+          </label>
+        </div>
       </div>
 
       {/* 3. Hashtags & Target URL Section */}
