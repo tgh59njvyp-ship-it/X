@@ -255,12 +255,18 @@ export const ButtonCard: React.FC<ButtonCardProps> = ({ config, onPress, isCompa
     <div className={`w-full flex flex-col items-center justify-center ${isCompact ? 'p-2' : 'p-6'}`}>
       {/* Title & Description Header */}
       {!isCompact && (
-        <div className="text-center mb-6 max-w-lg">
-          <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mb-1">
+        <div className="text-center mb-6 max-w-lg flex flex-col items-center">
+          <h3 className="text-xl md:text-2xl font-bold tracking-tight mb-1.5">
             {config.title || 'カスタムボタン'}
           </h3>
+
+          {/* Mode Pill Badge matching screenshot */}
+          <span className="inline-block px-3 py-0.5 rounded-full text-[11px] font-semibold bg-slate-200/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-300/60 dark:border-slate-700/60 mb-2">
+            {config.mode === 'random' ? 'ランダム' : config.mode === 'input' ? '名前入力式' : '固定ポスト'}
+          </span>
+
           {config.description && (
-            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 leading-relaxed mt-1">
               {config.description}
             </p>
           )}
@@ -322,6 +328,17 @@ export const ButtonCard: React.FC<ButtonCardProps> = ({ config, onPress, isCompa
           </motion.span>
         )}
       </motion.button>
+
+      {/* Bottom Overlay Pill Badge matching screenshot IMG_8184.jpeg */}
+      {!isCompact && config.showCardFooterBadge !== false && (
+        <div className="mt-6 flex items-center justify-center sm:justify-start w-full">
+          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-xs font-semibold bg-slate-800/85 text-slate-100 shadow-md border border-slate-700/80 backdrop-blur-xs">
+            <span className="truncate max-w-[200px]">{config.title || 'カスタムボタン'}</span>
+            <span className="opacity-50">|</span>
+            <span className="opacity-90 text-[11px] font-normal">みんなのボタンメーカー</span>
+          </span>
+        </div>
+      )}
     </div>
   );
 };

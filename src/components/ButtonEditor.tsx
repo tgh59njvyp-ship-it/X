@@ -502,15 +502,18 @@ export const ButtonEditor: React.FC<ButtonEditorProps> = ({
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
               <LinkIcon className="w-3.5 h-3.5 text-sky-500" />
-              投稿に付属させるURL (任意)
+              投稿に付属させるWeb URL (任意)
             </label>
             <input
               type="url"
               value={config.targetUrl || ''}
               onChange={(e) => updateField('targetUrl', e.target.value)}
-              placeholder="https://example.com"
+              placeholder="未入力時はこのボタンのWeb遊戯URLが自動付属"
               className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+              ※ 未入力時は、フォロワーが𝕏からタップして直接大画面で遊べるWebリンクが自動挿入されます。
+            </p>
           </div>
         </div>
       </div>
@@ -731,6 +734,50 @@ export const ButtonEditor: React.FC<ButtonEditorProps> = ({
                 </option>
               ))}
             </select>
+          </div>
+        </div>
+
+        {/* Post & Card Branding Options */}
+        <div className="pt-4 border-t border-slate-200/80 dark:border-slate-800/80 space-y-3">
+          <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+            ⚙️ 𝕏投稿 & カード表示オプション
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Title in X post toggle */}
+            <label className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">
+              <input
+                type="checkbox"
+                checked={config.includeTitleInPost !== false}
+                onChange={(e) => updateField('includeTitleInPost', e.target.checked)}
+                className="w-4 h-4 rounded text-sky-500 focus:ring-sky-500"
+              />
+              <div className="text-xs">
+                <span className="font-semibold text-slate-800 dark:text-slate-200 block">
+                  𝕏投稿に【ボタン名】を含める
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                  例: 【{config.title || '清楚度判定ボタン'}】結果テキスト...
+                </span>
+              </div>
+            </label>
+
+            {/* Bottom Card Footer Badge toggle */}
+            <label className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800">
+              <input
+                type="checkbox"
+                checked={config.showCardFooterBadge !== false}
+                onChange={(e) => updateField('showCardFooterBadge', e.target.checked)}
+                className="w-4 h-4 rounded text-sky-500 focus:ring-sky-500"
+              />
+              <div className="text-xs">
+                <span className="font-semibold text-slate-800 dark:text-slate-200 block">
+                  カード下部に銘柄帯を表示
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                  「{config.title || 'ボタン名'} | みんなのボタンメーカー」
+                </span>
+              </div>
+            </label>
           </div>
         </div>
       </div>

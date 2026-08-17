@@ -77,6 +77,8 @@ export interface CustomButtonConfig {
   prefixText?: string; // Text added before outcome
   suffixText?: string; // Text added after outcome
   autoOpenX?: boolean; // Automatically open X post page when clicked (default true)
+  includeTitleInPost?: boolean; // Include 【Title】 in X post text (default true)
+  showCardFooterBadge?: boolean; // Show bottom overlay badge like "タイトル | みんなのボタンメーカー" (default true)
   showCounter?: boolean; // Show click counter badge on button
   createdAt: number;
   authorName?: string;

@@ -12,6 +12,7 @@ import {
   buildShareableButtonUrl,
   encodeButtonConfig,
   buildXIntentUrl,
+  formatPostText,
 } from './utils/encoder';
 import { Header } from './components/Header';
 import { ButtonCard } from './components/ButtonCard';
@@ -22,7 +23,7 @@ import { SavedButtonsView } from './components/SavedButtonsView';
 import { ShareModal } from './components/ShareModal';
 import { AiAssistantModal } from './components/AiAssistantModal';
 import { getCardBgStyleObj } from './utils/theme';
-import { Bookmark, Share2, Sparkles, Plus, Check, Play, Edit3, ArrowLeft } from 'lucide-react';
+import { Bookmark, Share2, Sparkles, Plus, Check, Play, Edit3, ArrowLeft, Globe } from 'lucide-react';
 
 const LOCAL_STORAGE_KEY = 'x_post_buttons_v1';
 
@@ -106,13 +107,7 @@ export default function App() {
 
     // If autoOpenX is enabled (default true), immediately launch X post window
     if (cfg.autoOpenX !== false) {
-      let fullMessage = chosenText;
-      if (cfg.mode === 'input' && userInput) {
-        fullMessage = fullMessage.replace('{input}', userInput).replace('{name}', userInput);
-      }
-      const prefix = cfg.prefixText ? cfg.prefixText.trim() + '\n' : '';
-      const suffix = cfg.suffixText ? '\n' + cfg.suffixText.trim() : '';
-      const postBody = `${prefix}${fullMessage}${suffix}`;
+      const postBody = formatPostText(cfg, chosenText, userInput);
 
       const intentUrl = buildXIntentUrl({
         text: postBody,
@@ -214,18 +209,32 @@ export default function App() {
             <span className="font-extrabold text-sm sm:text-base">X Post Button Maker</span>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              window.location.hash = '';
-              setSharedButton(null);
-              handleCreateNew();
-            }}
-            className="text-xs font-bold px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white transition-all shadow-md cursor-pointer flex items-center gap-1.5"
-          >
-            <Plus className="w-4 h-4" />
-            自分もボタンを作る
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href={window.location.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-semibold px-3 py-2 rounded-xl border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/80 hover:bg-sky-100 text-sky-700 dark:text-sky-300 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+              title="新しいタブの大画面Webブラウザで開く"
+            >
+              <Globe className="w-3.5 h-3.5 text-sky-500" />
+              <span className="hidden sm:inline">Web大画面で開く</span>
+              <span className="sm:hidden">Webで開く</span>
+            </a>
+
+            <button
+              type="button"
+              onClick={() => {
+                window.location.hash = '';
+                setSharedButton(null);
+                handleCreateNew();
+              }}
+              className="text-xs font-bold px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              自分もボタンを作る
+            </button>
+          </div>
         </header>
 
         <main className="max-w-2xl mx-auto px-4 py-8 w-full flex-1 flex flex-col items-center justify-center">

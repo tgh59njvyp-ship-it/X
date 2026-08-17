@@ -37,6 +37,27 @@ export function decodeButtonConfig(encodedStr: string): CustomButtonConfig | nul
 }
 
 /**
+ * Formats the full message text for posting to X, including optional button title header 【ボタン名】
+ */
+export function formatPostText(
+  config: CustomButtonConfig,
+  outcomeText: string,
+  userInput?: string
+): string {
+  let fullMessage = outcomeText;
+  if (config.mode === 'input' && userInput) {
+    fullMessage = fullMessage.replace(/\{input\}/g, userInput).replace(/\{name\}/g, userInput);
+  }
+
+  const titleHeader =
+    config.includeTitleInPost !== false && config.title ? `【${config.title}】\n` : '';
+  const prefix = config.prefixText ? config.prefixText.trim() + '\n' : '';
+  const suffix = config.suffixText ? '\n' + config.suffixText.trim() : '';
+
+  return `${titleHeader}${prefix}${fullMessage}${suffix}`;
+}
+
+/**
  * Clean up hashtags array: remove `#` prefixes, trim, and filter out empty strings
  */
 export function normalizeHashtags(tags: string[] | string): string[] {
@@ -56,6 +77,7 @@ export function buildXIntentUrl(options: {
   text: string;
   hashtags?: string[];
   targetUrl?: string;
+  shareableUrl?: string;
 }): string {
   const params = new URLSearchParams();
 
@@ -70,8 +92,9 @@ export function buildXIntentUrl(options: {
     }
   }
 
-  if (options.targetUrl && options.targetUrl.trim().length > 0) {
-    params.set('url', options.targetUrl.trim());
+  const finalUrl = options.targetUrl?.trim() || options.shareableUrl?.trim();
+  if (finalUrl) {
+    params.set('url', finalUrl);
   }
 
   return `https://x.com/intent/post?${params.toString()}`;
